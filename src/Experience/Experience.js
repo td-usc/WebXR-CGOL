@@ -6,6 +6,7 @@ import Resources from './Utils/Resources.js'
 import Camera from './Camera.js'
 import Renderer from './Renderer.js'
 import World from './World/World.js'
+import UI from './World/UI.js'
 
 import sources from './sources.js'
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js'
@@ -48,6 +49,7 @@ export default class Experience
         this.renderer = new Renderer()
         this.raycaster = new THREE.Raycaster()
         this.mouse = new THREE.Vector2()
+        this.ui = new UI()
         this.INTERSECTED = null
         window.addEventListener('mousemove', (event) =>
         {

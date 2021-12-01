@@ -1,5 +1,5 @@
 # cgol
-conway's game of life in WebXR
+smrghsh's conway's game of life in WebXR with Canvas-based UI added
 
 ![Conway's Game of Life](thumbnail.png)
 ## to set up

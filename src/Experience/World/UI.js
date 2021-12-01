@@ -6,7 +6,7 @@ export default class UI {
     constructor() {
         this.experience = new Experience()
         this.scene = this.experience.scene
-        this.textBoxMesh = this.createTextBox("Header", "This is what a text box will look like.");
+        this.textBoxMesh = this.createTextBox("Header", "This is what a text box will look like.", {position: {x: 4, y: 1, z: 0}, rotation: {x: 0, y: 315, z: 0}});
         this.scene.add( this.textBoxMesh );
     }
     
@@ -104,13 +104,13 @@ export default class UI {
         }
     
         // Create Canvas
-        const canvas = createCanvas(this.config.size.width, this.config.size.height);
+        const canvas = this.createCanvas(this.config.size.width, this.config.size.height);
         
         //Set Canvas Properties -- Text alignment is Top Start
-        this.context = setCanvasContext(canvas, this.config.backgroundColor);
+        this.context = this.setCanvasContext(canvas, this.config.backgroundColor);
     
         // Header
-        let headerHeight = placeHeader(canvas, this.context, this.header, this.config.header);
+        let headerHeight = this.placeHeader(canvas, this.context, this.header, this.config.header);
     
        // Determine Word Wrap and Place Text
         let boundingBox = {
@@ -120,101 +120,102 @@ export default class UI {
             right: canvas.width - this.config.content.padding.right 
         }
     
-        placeText(canvas, this.context, boundingBox, this.content, this.config.content);
+        this.placeText(canvas, this.context, boundingBox, this.content, this.config.content);
     
         this.context.save();
     
         this.texture = new THREE.CanvasTexture(canvas);
     
         // Create Plane and Apply Texture
-        this.mesh = createPlane(this.config.position, this.config.rotation, this.config.size, this.config.opacity, this.texture);
+        this.mesh = this.createPlane(this.config.position, this.config.rotation, this.config.size, this.config.opacity, this.texture);
     
         return this.mesh;
     }
-}
 
-function createCanvas(width, height) {
-    let canvas = document.createElement('canvas');
-    canvas.width = width * 512;
-	canvas.height = height * 512;
-    document.body.appendChild(canvas);
-    return canvas;
-}
-
-function setCanvasContext(canvas, backgroundColor) {
-    let context = canvas.getContext('2d');
-    context.textAlign = 'start';
-    context. textBaseline = 'top';
-    context.fillStyle = backgroundColor;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    return context
-}
-
-
-function placeHeader(canvas, context, header, headerConfig) {
-    context.font = 'Bold ' + headerConfig.font.size + 'px ' + headerConfig.font.family;
-
-    context.fillStyle = headerConfig.barColor;
-    context.fillRect(0, 0, canvas.width, context.measureText('M').width + headerConfig.padding.top + headerConfig.padding.bottom); 
-
-    context.fillStyle = headerConfig.font.color; 
-    context.fillText(header, headerConfig.padding.left, headerConfig.padding.top, canvas.width - headerConfig.padding.left - headerConfig.padding.right);
-
-    // Return Height of the Header Box
-    return context.measureText('M').width + headerConfig.padding.top + headerConfig.padding.bottom;
-}
-
-
-function wordWrap(boundingBox, content, context) {
-    let lineLength = boundingBox.right - boundingBox.left;
-    let lines = [];
-    if (lineLength > context.measureText(content).width) lines[0] = content;
-    else {
-        let words = content.split(" ");
-        let lineIter = 0;
-        for (const word of words) {
-            if (lineLength > context.measureText(lines[lineIter] + word).width) {
-                lines[lineIter] === undefined ? lines[lineIter] = (word + " ") : lines[lineIter] += (word + " ");
-            }
-            else {
-                lineIter++;
-                lines[lineIter] === undefined ? lines[lineIter] = (word + " ") : lines[lineIter] += (word + " ");
+    createCanvas(width, height) {
+        let canvas = document.createElement('canvas');
+        canvas.width = width * 512;
+        canvas.height = height * 512;
+        document.body.appendChild(canvas);
+        return canvas;
+    }
+    
+    setCanvasContext(canvas, backgroundColor) {
+        let context = canvas.getContext('2d');
+        context.textAlign = 'start';
+        context. textBaseline = 'top';
+        context.fillStyle = backgroundColor;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        return context
+    }
+    
+    
+    placeHeader(canvas, context, header, headerConfig) {
+        context.font = 'Bold ' + headerConfig.font.size + 'px ' + headerConfig.font.family;
+    
+        context.fillStyle = headerConfig.barColor;
+        context.fillRect(0, 0, canvas.width, context.measureText('M').width + headerConfig.padding.top + headerConfig.padding.bottom); 
+    
+        context.fillStyle = headerConfig.font.color; 
+        context.fillText(header, headerConfig.padding.left, headerConfig.padding.top, canvas.width - headerConfig.padding.left - headerConfig.padding.right);
+    
+        // Return Height of the Header Box
+        return context.measureText('M').width + headerConfig.padding.top + headerConfig.padding.bottom;
+    }
+    
+    
+    wordWrap(boundingBox, content, context) {
+        let lineLength = boundingBox.right - boundingBox.left;
+        let lines = [];
+        if (lineLength > context.measureText(content).width) lines[0] = content;
+        else {
+            let words = content.split(" ");
+            let lineIter = 0;
+            for (const word of words) {
+                if (lineLength > context.measureText(lines[lineIter] + word).width) {
+                    lines[lineIter] === undefined ? lines[lineIter] = (word + " ") : lines[lineIter] += (word + " ");
+                }
+                else {
+                    lineIter++;
+                    lines[lineIter] === undefined ? lines[lineIter] = (word + " ") : lines[lineIter] += (word + " ");
+                }
             }
         }
+        return lines;
+     }
+    
+    
+    placeText(canvas, context, boundingBox, content, contentConfig) {
+    
+        context.font = contentConfig.font.size + 'px ' + contentConfig.font.family;
+        context.fillStyle = contentConfig.font.color;
+    
+        let lines = this.wordWrap(boundingBox, content, context);
+    
+        for (let iter = 0; iter < lines.length; iter++) {
+    
+            let fontHeight = context.measureText('M').width;
+    
+            // Offset Lines from Top: top of bounding box + height of previous lines + previous line spacing
+            let lineHeight = boundingBox.top + iter * fontHeight + (iter * fontHeight * contentConfig.lineSpacing);
+    
+            if (lineHeight < boundingBox.bottom - fontHeight)
+                context.fillText(lines[iter], boundingBox.left, lineHeight);
+    
+        }
     }
-    return lines;
- }
-
-
-function placeText(canvas, context, boundingBox, content, contentConfig) {
-
-    context.font = contentConfig.font.size + 'px ' + contentConfig.font.family;
-    context.fillStyle = contentConfig.font.color;
-
-    let lines = wordWrap(boundingBox, content, context);
-
-    for (let iter = 0; iter < lines.length; iter++) {
-
-        let fontHeight = context.measureText('M').width;
-
-        // Offset Lines from Top: top of bounding box + height of previous lines + previous line spacing
-        let lineHeight = boundingBox.top + iter * fontHeight + (iter * fontHeight * contentConfig.lineSpacing);
-
-        if (lineHeight < boundingBox.bottom - fontHeight)
-            context.fillText(lines[iter], boundingBox.left, lineHeight);
-
-    }
+    
+    
+    createPlane(position, rotation, size, opacity, texture) {
+        const planeGeometry = new THREE.PlaneGeometry( size.width, size.height );
+        const planeMaterial = new THREE.MeshBasicMaterial( {map: texture, side: THREE.DoubleSide, transparent: true, opacity: opacity} );
+        let mesh = new THREE.Mesh( planeGeometry, planeMaterial );
+        mesh.position.set(position.x, position.y , position.z);
+        mesh.rotation.x = rotation.x * (Math.PI / 180);
+        mesh.rotation.y = rotation.y * (Math.PI / 180);
+        mesh.rotation.z = rotation.z * (Math.PI / 180);
+    
+        return mesh;
+     }
 }
 
-
-function createPlane(position, rotation, size, opacity, texture) {
-    const planeGeometry = new THREE.PlaneGeometry( size.width, size.height );
-    const planeMaterial = new THREE.MeshBasicMaterial( {map: texture, side: THREE.DoubleSide, transparent: true, opacity: opacity} );
-    let mesh = new THREE.Mesh( planeGeometry, planeMaterial );
-    mesh.position.set(position.x, position.y , position.z);
-    mesh.rotation.x = rotation.x * (Math.PI / 180);
-    mesh.rotation.y = rotation.y * (Math.PI / 180);
-    mesh.rotation.z = rotation.z * (Math.PI / 180);
-
-    return mesh;
- }
